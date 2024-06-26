@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Calculator</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            color: #fff;
+            margin: 0;
+            padding: 10px; /* Added padding to avoid overflow issues on small screens */
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%; /* Adjusted to take full width */
+            max-width: 400px; /* Maximum width for larger screens */
+        }
+        .container h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group .flatpickr-input {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            box-sizing: border-box; /* Ensures padding doesn't cause overflow */
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #2575fc;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            box-sizing: border-box; /* Ensures padding doesn't cause overflow */
+        }
+        button:hover {
+            background-color: #1a57c7;
+        }
+        .result {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 18px;
+        }
+        /* Media query for smaller screens */
+        @media (max-width: 600px) {
+            body {
+                height: auto; /* Adjust height to auto for smaller screens */
+                padding: 20px; /* Add padding for better spacing */
+            }
+            .container {
+                padding: 15px;
+            }
+            button {
+                font-size: 14px;
+            }
+            .result {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Attendance Calculator</h1>
+        <form id="attendanceForm">
+            <div class="form-group">
+                <label for="totalLectures">Total Lectures Conducted Till Date:</label>
+                <input type="number" id="totalLectures" required>
+            </div>
+            <div class="form-group">
+                <label for="endDate">End Date of Semester:</label>
+                <input type="date" id="endDate" required>
+            </div>
+            <div class="form-group">
+                <label for="lecturesAbsent">Total Lectures Absent:</label>
+                <input type="number" id="lecturesAbsent" required>
+            </div>
+            <div class="form-group">
+                <label for="targetAttendance">Target Attendance (%):</label>
+                <input type="number" id="targetAttendance" required>
+            </div>
+            <div class="form-group">
+                <label for="holidays">If Institute has additional holidays in between</label>
+                <input type="text" id="holidays" placeholder="Select holiday dates" required>
+            </div>
+            <button type="submit">Calculate</button>
+        </form>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            flatpickr("#holidays", {
+                mode: "multiple",
+                dateFormat: "Y-m-d"
+            });
+        });
+
+        document.getElementById('attendanceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const today = new Date('2024-06-26');  // Fixed today's date as specified in the problem
+            const totalLecturesConducted = parseInt(document.getElementById('totalLectures').value);
+            const endDate = new Date(document.getElementById('endDate').value);
+            const lecturesAbsent = parseInt(document.getElementById('lecturesAbsent').value);
+            const targetAttendance = parseFloat(document.getElementById('targetAttendance').value);
+            const holidays = document.getElementById('holidays').value.split(',').map(date => new Date(date.trim()));
+
+            let totalLecturesRemaining = 0;
+            let currentDate = new Date(today);
+            const holidaysSet = new Set(holidays.map(date => date.getTime()));
+
+            // Count remaining weekdays
+            while (currentDate <= endDate) {
+                const dayOfWeek = currentDate.getDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidaysSet.has(currentDate.getTime())) {
+                    totalLecturesRemaining += 8; // 8 lectures per day
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            const totalLectures = totalLecturesConducted + totalLecturesRemaining;
+            const maxLecturesMissed = Math.floor(totalLectures * (1 - targetAttendance / 100));
+            const totalAllowedLecturesMissed = maxLecturesMissed - lecturesAbsent;
+
+            let additionalDaysOff = 0;
+            let adjustedLecturesAbsent = lecturesAbsent;
+
+            // Calculate the exact number of additional days off
+            while (true) {
+                adjustedLecturesAbsent += 8;
+                const currentAttendance = ((totalLectures - adjustedLecturesAbsent) / totalLectures) * 100;
+                if (currentAttendance < targetAttendance) {
+                    break;
+                }
+                additionalDaysOff++;
+            }
+
+            document.getElementById('result').textContent = `You could have taken ${additionalDaysOff} more day(s) off and still met your target attendance.`;
+        });
+    </script>
+</body>
+</html>
